@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RateLimitStore } from './store.interface';
 
 @Injectable()
-export class RedisStore implements RateLimitStore {
+export class RedisStore implements RateLimitStore, OnModuleDestroy {
     private client: Redis;
-    private scriptSha: string;
+    private scriptSha: string | null = null;
     private readonly LUA_SCRIPT = `
     local key = KEYS[1]
     local window = tonumber(ARGV[1])
@@ -33,11 +33,23 @@ export class RedisStore implements RateLimitStore {
             password: options.redisOptions?.password,
             db: options.redisOptions?.db || 0,
             keyPrefix: options.redisOptions?.keyPrefix || 'rate-limit:',
-            enableReadyCheck: options.redisOptions?.enableReadyCheck || false,
+            enableReadyCheck: options.redisOptions?.enableReadyCheck !== false,
+            retryStrategy: (times: number) => {
+                const delay = Math.min(times * 50, 2000);
+                return delay;
+            },
+            maxRetriesPerRequest: 3,
         });
 
-        // Загружаем скрипт при инициализации
         this.loadScript();
+
+        this.client.on('error', (error) => {
+            console.error('Redis connection error:', error);
+        });
+
+        this.client.on('ready', () => {
+            console.log('Redis connection established');
+        });
     }
 
     private async loadScript(): Promise<void> {
@@ -46,7 +58,6 @@ export class RedisStore implements RateLimitStore {
             this.scriptSha = await this.client.script('LOAD', this.LUA_SCRIPT);
         } catch (error) {
             console.error('Failed to load Lua script:', error);
-            // В случае ошибки будем использовать eval вместо evalsha
             this.scriptSha = null;
         }
     }
@@ -79,9 +90,9 @@ export class RedisStore implements RateLimitStore {
                     now.toString()
                 ) as [number, number];
             }
-        } catch (error) {
+        } catch (error: any) {
             // Если скрипт не найден (например, после перезапуска Redis), загружаем его снова
-            if (error.message.includes('NOSCRIPT')) {
+            if (error.message && error.message.includes('NOSCRIPT')) {
                 await this.loadScript();
                 return this.increment(key, windowMs);
             }
@@ -90,7 +101,6 @@ export class RedisStore implements RateLimitStore {
 
         const [blocked, count] = result;
 
-        // Получаем время истечения
         const ttl = await this.client.ttl(key);
         const resetTime = new Date(now + (ttl > 0 ? ttl * 1000 : windowMs));
 
@@ -110,13 +120,21 @@ export class RedisStore implements RateLimitStore {
     }
 
     async resetAll(): Promise<void> {
-        const keys = await this.client.keys('rate-limit:*');
+        const pattern = `${this.options.redisOptions?.keyPrefix || 'rate-limit:'}*`;
+        const keys = await this.client.keys(pattern);
         if (keys.length > 0) {
-            await this.client.del(...keys);
+            const keysWithoutPrefix = keys.map(k =>
+                k.replace(this.options.redisOptions?.keyPrefix || 'rate-limit:', '')
+            );
+            await this.client.del(...keysWithoutPrefix);
         }
     }
 
     async disconnect(): Promise<void> {
         await this.client.quit();
+    }
+
+    async onModuleDestroy(): Promise<void> {
+        await this.disconnect();
     }
 }

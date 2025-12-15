@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, DynamicModule } from '@nestjs/common';
 import { RateLimitCoreModule } from './rate-limit-core.module';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { RateLimitOptions } from './interfaces/rate-limit-options.interface';
@@ -6,7 +6,7 @@ import { RateLimitOptions } from './interfaces/rate-limit-options.interface';
 @Global()
 @Module({})
 export class RateLimitModule {
-    static forRoot(options: RateLimitOptions) {
+    static forRoot(options: RateLimitOptions): DynamicModule {
         return {
             module: RateLimitModule,
             imports: [RateLimitCoreModule.forRoot(options)],
@@ -24,21 +24,12 @@ export class RateLimitModule {
         imports?: any[];
         useFactory: (...args: any[]) => Promise<RateLimitOptions> | RateLimitOptions;
         inject?: any[];
-    }) {
+    }): DynamicModule {
         return {
             module: RateLimitModule,
             imports: [
                 ...(options.imports || []),
-                {
-                    module: RateLimitCoreModule,
-                    providers: [
-                        {
-                            provide: 'RATE_LIMIT_OPTIONS',
-                            useFactory: options.useFactory,
-                            inject: options.inject || [],
-                        },
-                    ],
-                },
+                RateLimitCoreModule.forRootAsync(options),
             ],
             providers: [
                 {

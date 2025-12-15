@@ -1,11 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
 import { RateLimitStore } from './stores/store.interface';
 import { RateLimitOptions } from './interfaces/rate-limit-options.interface';
 
 @Injectable()
 export class RateLimitService {
     private defaultOptions: RateLimitOptions = {
-        windowMs: 15 * 60 * 1000, // 15 минут
+        windowMs: 15 * 60 * 1000,
         max: 100,
         clusterMode: false,
         statusCode: 429,
@@ -14,15 +14,18 @@ export class RateLimitService {
 
     constructor(
         @Inject('RATE_LIMIT_STORE') private store: RateLimitStore,
-    ) {}
+        @Optional() @Inject('RATE_LIMIT_OPTIONS') private moduleOptions?: RateLimitOptions,
+    ) {
+        if (moduleOptions) {
+            this.defaultOptions = { ...this.defaultOptions, ...moduleOptions };
+        }
+    }
 
     async checkRateLimit(request: any, options?: Partial<RateLimitOptions>) {
         const mergedOptions = { ...this.defaultOptions, ...options };
 
-        // Генерация ключа
         const key = this.generateKey(request, mergedOptions);
 
-        // Проверка, нужно ли пропустить запрос
         if (mergedOptions.skip && mergedOptions.skip(request)) {
             return {
                 allowed: true,
@@ -32,7 +35,6 @@ export class RateLimitService {
             };
         }
 
-        // Проверка rate limit
         const result = await this.store.increment(key, mergedOptions.windowMs);
 
         const remaining = Math.max(0, mergedOptions.max - result.count);
@@ -52,7 +54,6 @@ export class RateLimitService {
             return options.keyGenerator(request);
         }
 
-        // По умолчанию используем IP + метод + путь
         const ip = request.ip ||
             request.connection?.remoteAddress ||
             request.socket?.remoteAddress ||

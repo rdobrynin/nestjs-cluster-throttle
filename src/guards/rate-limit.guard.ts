@@ -21,7 +21,6 @@ export class RateLimitGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const response = context.switchToHttp().getResponse();
 
-        // Проверяем, нужно ли пропустить rate limiting
         const skipRateLimit = this.reflector.getAllAndOverride<boolean>(
             SKIP_RATE_LIMIT_METADATA,
             [context.getHandler(), context.getClass()],
@@ -31,7 +30,6 @@ export class RateLimitGuard implements CanActivate {
             return true;
         }
 
-        // Получаем настройки из декоратора
         const options = this.reflector.getAllAndOverride(
             RATE_LIMIT_METADATA,
             [context.getHandler(), context.getClass()],
