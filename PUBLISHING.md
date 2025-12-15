@@ -7,14 +7,14 @@
 If you don't have an account yet:
 ```bash
 npm adduser
-# или
+# or
 npm login
 ```
 
 Enter your details:
 - Username
 - Password
-- Email (будет публичным)
+- Email (will public)
 
 ### 2. Check the package name
 
@@ -32,11 +32,11 @@ If the name is taken, change it in `package.json`:
 
 ### 3. Update project information
 
-In `package.json` обновите:
-- `author.email` - ваш email
-- `repository.url` - URL вашего GitHub репозитория
-- `bugs.url` - URL страницы issues
-- `homepage` - URL домашней страницы проекта
+In `package.json` update:
+- `author.email` - your email
+- `repository.url` - URL GitHub repository
+- `bugs.url` - URL page issues
+- `homepage` - URL page home
 
 Example:
 ```json
@@ -258,7 +258,7 @@ npm unpublish nestjs-cluster-throttle --force
 Mark a version as deprecated:
 
 ```bash
-npm deprecate nestjs-cluster-throttle@1.0.0 "Пожалуйста, обновитесь до версии 2.0.0"
+npm deprecate nestjs-cluster-throttle@1.0.0 "Please update to version 2.0.0"
 ```
 
 ## Pre-publication Checklist
