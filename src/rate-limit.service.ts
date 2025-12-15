@@ -54,7 +54,8 @@ export class RateLimitService {
             return options.keyGenerator(request);
         }
 
-        const ip = request.ip ||
+        const ip =
+            request.ip ||
             request.connection?.remoteAddress ||
             request.socket?.remoteAddress ||
             request.info?.remoteAddress ||

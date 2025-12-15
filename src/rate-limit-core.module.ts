@@ -24,11 +24,7 @@ export class RateLimitCoreModule {
 
         return {
             module: RateLimitCoreModule,
-            providers: [
-                storeProvider,
-                optionsProvider,
-                RateLimitService,
-            ],
+            providers: [storeProvider, optionsProvider, RateLimitService],
             exports: [RateLimitService, 'RATE_LIMIT_OPTIONS'],
         };
     }
@@ -59,11 +55,7 @@ export class RateLimitCoreModule {
         return {
             module: RateLimitCoreModule,
             imports: options.imports || [],
-            providers: [
-                optionsProvider,
-                storeProvider,
-                RateLimitService,
-            ],
+            providers: [optionsProvider, storeProvider, RateLimitService],
             exports: [RateLimitService, 'RATE_LIMIT_OPTIONS'],
         };
     }

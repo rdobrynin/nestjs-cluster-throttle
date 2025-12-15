@@ -71,24 +71,24 @@ export class RedisStore implements RateLimitStore, OnModuleDestroy {
         try {
             if (this.scriptSha) {
                 // Используем evalsha если скрипт загружен
-                result = await this.client.evalsha(
+                result = (await this.client.evalsha(
                     this.scriptSha,
                     1,
                     key,
                     windowMs.toString(),
                     max.toString(),
-                    now.toString()
-                ) as [number, number];
+                    now.toString(),
+                )) as [number, number];
             } else {
                 // Используем eval если скрипт не загружен
-                result = await this.client.eval(
+                result = (await this.client.eval(
                     this.LUA_SCRIPT,
                     1,
                     key,
                     windowMs.toString(),
                     max.toString(),
-                    now.toString()
-                ) as [number, number];
+                    now.toString(),
+                )) as [number, number];
             }
         } catch (error: any) {
             // Если скрипт не найден (например, после перезапуска Redis), загружаем его снова
@@ -123,8 +123,8 @@ export class RedisStore implements RateLimitStore, OnModuleDestroy {
         const pattern = `${this.options.redisOptions?.keyPrefix || 'rate-limit:'}*`;
         const keys = await this.client.keys(pattern);
         if (keys.length > 0) {
-            const keysWithoutPrefix = keys.map(k =>
-                k.replace(this.options.redisOptions?.keyPrefix || 'rate-limit:', '')
+            const keysWithoutPrefix = keys.map((k) =>
+                k.replace(this.options.redisOptions?.keyPrefix || 'rate-limit:', ''),
             );
             await this.client.del(...keysWithoutPrefix);
         }
