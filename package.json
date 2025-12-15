@@ -1,6 +1,6 @@
 {
   "name": "nestjs-cluster-throttle",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Enterprise-grade rate limiting module for NestJS with Redis support, multiple strategies, and cluster mode",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
