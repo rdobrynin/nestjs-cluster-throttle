@@ -15,10 +15,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "prepublishOnly": "npm run build",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "prepublishOnly": "npm run lint && npm run format:check && npm run build && npm test",
     "prepare": "npm run build"
   },
   "keywords": [
@@ -53,7 +55,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rdobrynin/nestjs-cluster-throttle.git"
+    "url": "https://github.com/rdobrynin/nestjs-cluster-throttle.git"
   },
   "bugs": {
     "url": "https://github.com/rdobrynin/nestjs-cluster-throttle/issues"
