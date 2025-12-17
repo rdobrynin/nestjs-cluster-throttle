@@ -9,6 +9,7 @@ Cluster-ready rate limiting module for NestJS with Redis support and multiple ra
 - 💾 **Memory storage** - In-memory storage for single-instance applications
 - 🎯 **Flexible strategies** - Support for fixed-window, token-bucket, and sliding-window algorithms
 - 🎨 **Decorator-based** - Easy-to-use decorators for route protection
+- 🌍 **Geo-blocking** - IP-based country restrictions with multiple providers (internal, IP-API, custom)
 - ⚙️ **Highly configurable** - Customize limits, windows, and behavior
 - 🔒 **Type-safe** - Written in TypeScript with full type support
 - 🛡️ **Fail-open strategy** - Gracefully handles storage failures
@@ -194,6 +195,132 @@ RateLimitModule.forRoot({
   skipSuccessfulRequests: true,
 })
 ```
+
+## Geo-blocking (IP-based Country Restrictions)
+
+### Basic Geo-blocking
+
+Block or allow specific countries:
+
+```typescript
+import { Controller, Get } from '@nestjs/common';
+import { RateLimit } from 'nestjs-cluster-throttle';
+
+@Controller('api')
+export class ApiController {
+  @Get('us-only')
+  @RateLimit({
+    windowMs: 60000,
+    max: 100,
+    geoLocation: {
+      allowedCountries: ['US', 'CA'], // Only US and Canada
+      message: 'This service is only available in North America',
+      statusCode: 403,
+    },
+  })
+  usOnlyEndpoint() {
+    return { message: 'Welcome, North American user!' };
+  }
+
+  @Get('block-countries')
+  @RateLimit({
+    windowMs: 60000,
+    max: 100,
+    geoLocation: {
+      blockedCountries: ['CN', 'RU'], // Block specific countries
+      message: 'Access denied from your country',
+    },
+  })
+  restrictedEndpoint() {
+    return { message: 'Access granted' };
+  }
+}
+```
+
+### Geo Providers
+
+Choose from multiple geo-location providers:
+
+```typescript
+RateLimitModule.forRoot({
+  windowMs: 60000,
+  max: 100,
+  geoLocation: {
+    provider: 'ip-api', // Options: 'internal', 'ip-api', 'custom'
+    allowedCountries: ['US', 'GB', 'DE'],
+  },
+})
+```
+
+#### Available Providers
+
+1. **internal** (default) - Basic IP range checking, good for testing
+2. **ip-api** - Free service from ip-api.com (45 req/min limit)
+3. **custom** - Bring your own provider
+
+### Custom Geo Provider
+
+```typescript
+import { GeoLocationProvider, GeoLocationResult } from 'nestjs-cluster-throttle';
+
+class MyGeoProvider implements GeoLocationProvider {
+  async lookup(ip: string): Promise<GeoLocationResult | null> {
+    // e.g., MaxMind GeoIP2, IPStack, etc.
+    return {
+      country: 'United States',
+      countryCode: 'US',
+      city: 'New York',
+      lat: 40.7128,
+      lon: -74.0060,
+    };
+  }
+}
+
+RateLimitModule.forRoot({
+  windowMs: 60000,
+  max: 100,
+  geoLocation: {
+    provider: 'custom',
+    customProvider: new MyGeoProvider(),
+    allowedCountries: ['US'],
+  },
+})
+```
+
+### Geo-block Callback
+
+Get notified when a request is geo-blocked:
+
+```typescript
+@RateLimit({
+  windowMs: 60000,
+  max: 100,
+  geoLocation: {
+    blockedCountries: ['XX'],
+    onGeoBlock: (ip, country, request) => {
+      console.log(`Blocked request from ${country} (${ip})`);
+      // Log to analytics, notify admin, etc.
+    },
+  },
+})
+```
+
+### Global Geo-blocking
+
+Apply geo-restrictions globally:
+
+```typescript
+RateLimitModule.forRoot({
+  windowMs: 60000,
+  max: 100,
+  geoLocation: {
+    provider: 'ip-api',
+    blockedCountries: ['XX', 'YY'],
+    message: 'Service not available in your region',
+  },
+})
+```
+
 
 ## Rate Limiting Strategies
 
