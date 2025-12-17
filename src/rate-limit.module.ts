@@ -27,7 +27,10 @@ export class RateLimitModule {
     }): DynamicModule {
         return {
             module: RateLimitModule,
-            imports: [...(options.imports || []), RateLimitCoreModule.forRootAsync(options)],
+            imports: [
+                ...(options.imports || []),
+                RateLimitCoreModule.forRootAsync(options),
+            ],
             providers: [
                 {
                     provide: 'APP_GUARD',

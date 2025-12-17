@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Module } from '@nestjs/common';
 import { RateLimitModule } from './rate-limit.module';
 import { RateLimitService } from './rate-limit.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
@@ -95,10 +96,16 @@ describe('RateLimitModule', () => {
                 }
             }
 
+            @Module({
+                providers: [ConfigService],
+                exports: [ConfigService],
+            })
+            class ConfigModule {}
+
             const module: TestingModule = await Test.createTestingModule({
                 imports: [
                     RateLimitModule.forRootAsync({
-                        imports: [],
+                        imports: [ConfigModule],
                         useFactory: (configService: ConfigService) => ({
                             windowMs: configService.get('RATE_LIMIT_WINDOW'),
                             max: configService.get('RATE_LIMIT_MAX'),
@@ -106,7 +113,6 @@ describe('RateLimitModule', () => {
                         inject: [ConfigService],
                     }),
                 ],
-                providers: [ConfigService],
             }).compile();
 
             const service = module.get<RateLimitService>(RateLimitService);
@@ -140,11 +146,14 @@ describe('RateLimitModule', () => {
                     RateLimitModule.forRootAsync({
                         useFactory: async () => {
                             // Simulate async operation
-                            await new Promise((resolve) => setTimeout(resolve, 10));
-                            return {
-                                windowMs: 60000,
-                                max: 100,
-                            };
+                            return new Promise((resolve) => {
+                                setTimeout(() => {
+                                    resolve({
+                                        windowMs: 60000,
+                                        max: 100,
+                                    });
+                                }, 10);
+                            });
                         },
                     }),
                 ],
