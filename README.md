@@ -305,4 +305,13 @@ When rate limiting is active, the following headers are set:
 
 ```typescript
 import { Test } from '@nestjs/testing';
-import { RateLimitModule, RateLimitService }
+import { RateLimitModule, RateLimitService } from 'path'
+```
+
+## 🧑‍💻 Contributing
+We love contributions! Found a bug or have an idea? Open an issue or submit a PR.
+
+---
+
+## 📜 License
+This project is licensed under the MIT License. See the LICENSE file for details.

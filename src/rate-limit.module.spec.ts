@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Module } from '@nestjs/common';
 import { RateLimitModule } from './rate-limit.module';
 import { RateLimitService } from './rate-limit.service';
+import {RateLimitGuard} from "./guards/rate-limit.guard";
 
 describe('RateLimitModule', () => {
     describe('forRoot', () => {
@@ -39,15 +40,15 @@ describe('RateLimitModule', () => {
         });
 
         it('should provide RateLimitGuard as APP_GUARD', async () => {
-            const module: TestingModule = await Test.createTestingModule({
-                imports: [
-                    RateLimitModule.forRoot({
-                        windowMs: 60000,
-                        max: 100,
-                    }),
-                ],
-            }).compile();
-            expect(module).toBeDefined();
+            const moduleMetadata = RateLimitModule.forRoot({
+                windowMs: 60000,
+                max: 100,
+            });
+            const providers = moduleMetadata.providers as any[];
+            const appGuardProvider = providers.find((p: any) => p.provide === 'APP_GUARD');
+
+            expect(appGuardProvider).toBeDefined();
+            expect(appGuardProvider.useClass).toBe(RateLimitGuard);
         });
 
         it('should export RateLimitCoreModule', async () => {
