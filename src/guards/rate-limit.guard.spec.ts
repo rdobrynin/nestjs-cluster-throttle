@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RateLimitGuard } from './rate-limit.guard';
 import { RateLimitService } from '../rate-limit.service';
+import { GeoService } from '../geo/geo.service';
 import {
     createMockRequest,
     createMockResponse,
@@ -15,12 +16,17 @@ describe('RateLimitGuard', () => {
     let guard: RateLimitGuard;
     let reflector: Reflector;
     let rateLimitService: jest.Mocked<RateLimitService>;
+    let geoService: jest.Mocked<GeoService>;
 
     const mockRequest = createMockRequest();
     const mockResponse = createMockResponse();
 
     const mockRateLimitService = {
         checkRateLimit: jest.fn(),
+    } as any;
+
+    const mockGeoService = {
+        isCountryAllowed: jest.fn(),
     } as any;
 
     beforeEach(async () => {
@@ -223,4 +229,4 @@ describe('RateLimitGuard', () => {
             await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
         });
     });
-});
+})
