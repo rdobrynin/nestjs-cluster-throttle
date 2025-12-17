@@ -281,10 +281,7 @@ describe('RedisStore', () => {
 
             errorCallback(new Error('Connection failed'));
 
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Redis connection error:',
-                expect.any(Error),
-            );
+            expect(consoleSpy).toHaveBeenCalledWith('Redis connection error:', expect.any(Error));
 
             consoleSpy.mockRestore();
         });
@@ -302,4 +299,4 @@ describe('RedisStore', () => {
             consoleSpy.mockRestore();
         });
     });
-})
+});

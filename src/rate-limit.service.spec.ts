@@ -448,4 +448,4 @@ describe('RateLimitService', () => {
             expect(mockStore.increment).toHaveBeenCalledWith(expect.any(String), smallWindow);
         });
     });
-})
+});

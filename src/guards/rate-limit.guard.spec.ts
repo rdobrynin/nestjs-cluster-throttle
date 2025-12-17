@@ -223,4 +223,4 @@ describe('RateLimitGuard', () => {
             await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
         });
     });
-})
+});

@@ -219,4 +219,4 @@ describe('MemoryStore', () => {
             expect(results[3].count).toBe(2);
         });
     });
-})
+});

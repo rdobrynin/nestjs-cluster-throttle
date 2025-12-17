@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, Controller, Get } from '@nestjs/common';
 import { RateLimitModule, RateLimit, SkipRateLimit } from '../src';
