@@ -133,7 +133,7 @@ describe('RateLimitModule (e2e)', () => {
             expect(res3.headers['x-ratelimit-remaining']).toBe('0');
         });
 
-        //@todo fix config
+        //@fix config
 
         // it('should handle concurrent requests', async () => {
         //     const promises = Array.from({ length: 5 }, () =>
@@ -210,7 +210,7 @@ describe('RateLimitModule (e2e)', () => {
             expect(response.status).toBe(429);
         });
     });
-    //@todo fix config
+    //fix config
     // describe('Different IP Addresses', () => {
     //     beforeEach(async () => {
     //         const moduleFixture: TestingModule = await Test.createTestingModule({
