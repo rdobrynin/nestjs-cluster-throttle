@@ -164,7 +164,6 @@ describe('RedisStore', () => {
 
     describe('decrement', () => {
         it('should remove specific timestamp from sorted set', async () => {
-            const now = Date.now();
             await store.decrement('test-key');
 
             expect(mockRedis.zremrangebyscore).toHaveBeenCalledWith(
