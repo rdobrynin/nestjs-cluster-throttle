@@ -13,7 +13,7 @@ module.exports = {
     ],
     coverageDirectory: '../coverage',
     testEnvironment: 'node',
-    coverageThresholds: {
+    coverageThreshold: {
         global: {
             branches: 80,
             functions: 80,
