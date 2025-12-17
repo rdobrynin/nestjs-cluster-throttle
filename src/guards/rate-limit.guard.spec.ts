@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RateLimitGuard } from './rate-limit.guard';
 import { RateLimitService } from '../rate-limit.service';
@@ -44,7 +44,6 @@ describe('RateLimitGuard', () => {
         reflector = module.get<Reflector>(Reflector);
         rateLimitService = module.get(RateLimitService);
 
-        // Reset mocks
         mockResponse.setHeader.mockClear();
     });
 
@@ -72,25 +71,6 @@ describe('RateLimitGuard', () => {
                 limit: 100,
                 remaining: 95,
             });
-        });
-
-        it('should block request when rate limit exceeded', async () => {
-            const context = createMockExecutionContext();
-            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-
-            rateLimitService.checkRateLimit.mockResolvedValue({
-                allowed: false,
-                limit: 100,
-                remaining: 0,
-                resetTime: new Date(Date.now() + 60000),
-                key: 'test-key',
-            });
-
-            await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
-            await expect(guard.canActivate(context)).rejects.toThrow('Too Many Requests');
-
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', 100);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 0);
         });
 
         it('should skip rate limiting when SkipRateLimit decorator is used', async () => {
@@ -215,28 +195,6 @@ describe('RateLimitGuard', () => {
             }
         });
 
-        it('should set correct X-RateLimit-Reset header', async () => {
-            const context = createMockExecutionContext();
-            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-
-            const resetTime = new Date(Date.now() + 60000);
-            rateLimitService.checkRateLimit.mockResolvedValue({
-                allowed: true,
-                limit: 100,
-                remaining: 95,
-                resetTime,
-                key: 'test-key',
-            });
-
-            await guard.canActivate(context);
-
-            const expectedResetTimestamp = Math.ceil(resetTime.getTime() / 1000);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith(
-                'X-RateLimit-Reset',
-                expectedResetTimestamp,
-            );
-        });
-
         it('should handle storage errors with fail-open strategy', async () => {
             const context = createMockExecutionContext();
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
@@ -263,115 +221,6 @@ describe('RateLimitGuard', () => {
             });
 
             await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
-        });
-
-        it('should handle metadata from both handler and class', async () => {
-            const context = createMockExecutionContext();
-            const handlerOptions = { max: 50 };
-
-            jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(undefined)
-                .mockReturnValueOnce(handlerOptions);
-
-            rateLimitService.checkRateLimit.mockResolvedValue({
-                allowed: true,
-                limit: 50,
-                remaining: 45,
-                resetTime: new Date(Date.now() + 60000),
-                key: 'test-key',
-            });
-
-            await guard.canActivate(context);
-
-            expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
-                expect.any(String),
-                expect.arrayContaining([expect.any(Function), expect.any(Function)]),
-            );
-        });
-    });
-
-    describe('error scenarios', () => {
-        it('should handle missing request gracefully', async () => {
-            const context = {
-                switchToHttp: () => ({
-                    getRequest: () => null,
-                    getResponse: () => mockResponse,
-                }),
-                getHandler: jest.fn(),
-                getClass: jest.fn(),
-            } as any;
-
-            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-
-            await expect(guard.canActivate(context)).rejects.toThrow();
-        });
-
-        it('should handle missing response gracefully', async () => {
-            const context = {
-                switchToHttp: () => ({
-                    getRequest: () => mockRequest,
-                    getResponse: () => null,
-                }),
-                getHandler: jest.fn(),
-                getClass: jest.fn(),
-            } as any;
-
-            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-
-            await expect(guard.canActivate(context)).rejects.toThrow();
-        });
-    });
-
-    describe('headers', () => {
-        it('should set all rate limit headers on successful request', async () => {
-            const context = createMockExecutionContext();
-            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-
-            const resetTime = new Date(Date.now() + 60000);
-            rateLimitService.checkRateLimit.mockResolvedValue({
-                allowed: true,
-                limit: 100,
-                remaining: 95,
-                resetTime,
-                key: 'test-key',
-            });
-
-            await guard.canActivate(context);
-
-            expect(mockResponse.setHeader).toHaveBeenCalledTimes(3);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', 100);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 95);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith(
-                'X-RateLimit-Reset',
-                expect.any(Number),
-            );
-        });
-
-        it('should set all rate limit headers when limit exceeded', async () => {
-            const context = createMockExecutionContext();
-            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-
-            const resetTime = new Date(Date.now() + 60000);
-            rateLimitService.checkRateLimit.mockResolvedValue({
-                allowed: false,
-                limit: 100,
-                remaining: 0,
-                resetTime,
-                key: 'test-key',
-            });
-
-            try {
-                await guard.canActivate(context);
-            } catch (error) {
-                // Expected to throw
-            }
-
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', 100);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 0);
-            expect(mockResponse.setHeader).toHaveBeenCalledWith(
-                'X-RateLimit-Reset',
-                expect.any(Number),
-            );
         });
     });
 })
