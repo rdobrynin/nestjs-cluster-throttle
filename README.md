@@ -1,5 +1,7 @@
 # nestjs-cluster-throttle
 
+[![npm version](https://badge.fury.io/js/nestjs-cluster-throttle.svg)](https://badge.fury.io/js/nestjs-cluster-throttle) [![npm downloads](https://img.shields.io/npm/dm/nestjs-cluster-throttle.svg)](https://www.npmjs.com/package/nestjs-cluster-throttle) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://claude.ai/chat/coverage) [![CI](https://github.com/your-username/nestjs-cluster-throttle/workflows/CI/badge.svg)](https://github.com/your-username/nestjs-cluster-throttle/actions)
+
 Cluster-ready rate limiting module for NestJS with Redis support and multiple rate limiting strategies.
 
 ## Features
@@ -321,7 +323,6 @@ RateLimitModule.forRoot({
 })
 ```
 
-
 ## Rate Limiting Strategies
 
 ### Fixed Window (Default)
@@ -393,32 +394,45 @@ export class MyService {
 
 ## Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `windowMs` | number | `900000` (15 min) | Time window in milliseconds |
-| `max` | number | `100` | Maximum number of requests per window |
-| `message` | string | `'Too Many Requests'` | Error message when limit is exceeded |
-| `statusCode` | number | `429` | HTTP status code when limit is exceeded |
-| `skipSuccessfulRequests` | boolean | `false` | Skip successful requests in counting |
-| `keyGenerator` | function | IP-based | Function to generate rate limit key |
-| `skip` | function | `undefined` | Function to conditionally skip rate limiting |
-| `handler` | function | `undefined` | Custom handler for rate limit exceeded |
-| `clusterMode` | boolean | `false` | Enable Redis for cluster mode |
-| `redisOptions` | object | `{}` | Redis connection options |
-| `strategy` | string | `'fixed-window'` | Rate limiting strategy |
-| `burstCapacity` | number | `undefined` | Burst capacity for token-bucket |
-| `fillRate` | number | `undefined` | Fill rate for token-bucket |
+|Option|Type|Default|Description|
+|---|---|---|---|
+|`windowMs`|number|`900000` (15 min)|Time window in milliseconds|
+|`max`|number|`100`|Maximum number of requests per window|
+|`message`|string|`'Too Many Requests'`|Error message when limit is exceeded|
+|`statusCode`|number|`429`|HTTP status code when limit is exceeded|
+|`skipSuccessfulRequests`|boolean|`false`|Skip successful requests in counting|
+|`keyGenerator`|function|IP-based|Function to generate rate limit key|
+|`skip`|function|`undefined`|Function to conditionally skip rate limiting|
+|`handler`|function|`undefined`|Custom handler for rate limit exceeded|
+|`clusterMode`|boolean|`false`|Enable Redis for cluster mode|
+|`redisOptions`|object|`{}`|Redis connection options|
+|`strategy`|string|`'fixed-window'`|Rate limiting strategy|
+|`burstCapacity`|number|`undefined`|Burst capacity for token-bucket|
+|`fillRate`|number|`undefined`|Fill rate for token-bucket|
+|`geoLocation`|object|`undefined`|Geo-blocking configuration|
+
+### Geo-Location Options
+
+|Option|Type|Default|Description|
+|---|---|---|---|
+|`provider`|string|`'internal'`|Geo provider: 'internal', 'ip-api', 'custom'|
+|`customProvider`|GeoLocationProvider|`undefined`|Custom geo provider implementation|
+|`allowedCountries`|string[]|`undefined`|ISO country codes to allow|
+|`blockedCountries`|string[]|`undefined`|ISO country codes to block|
+|`onGeoBlock`|function|`undefined`|Callback when request is geo-blocked|
+|`message`|string|Auto-generated|Error message for geo-blocked requests|
+|`statusCode`|number|`403`|HTTP status for geo-blocked requests|
 
 ### Redis Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `host` | string | `'localhost'` | Redis host |
-| `port` | number | `6379` | Redis port |
-| `password` | string | `undefined` | Redis password |
-| `db` | number | `0` | Redis database number |
-| `keyPrefix` | string | `'rate-limit:'` | Key prefix for Redis |
-| `enableReadyCheck` | boolean | `true` | Enable ready check |
+|Option|Type|Default|Description|
+|---|---|---|---|
+|`host`|string|`'localhost'`|Redis host|
+|`port`|number|`6379`|Redis port|
+|`password`|string|`undefined`|Redis password|
+|`db`|number|`0`|Redis database number|
+|`keyPrefix`|string|`'rate-limit:'`|Key prefix for Redis|
+|`enableReadyCheck`|boolean|`true`|Enable ready check|
 
 ## Response Headers
 
@@ -432,8 +446,81 @@ When rate limiting is active, the following headers are set:
 
 ```typescript
 import { Test } from '@nestjs/testing';
-import { RateLimitModule, RateLimitService } from 'path'
+import { RateLimitModule, RateLimitService } from 'nestjs-cluster-throttle';
+
+describe('RateLimitService', () => {
+  let service: RateLimitService;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      imports: [
+        RateLimitModule.forRoot({
+          windowMs: 1000,
+          max: 5,
+        }),
+      ],
+    }).compile();
+
+    service = module.get<RateLimitService>(RateLimitService);
+  });
+
+  it('should limit requests', async () => {
+    const request = { ip: '127.0.0.1', method: 'GET', url: '/test' };
+
+    // First 5 requests should be allowed
+    for (let i = 0; i < 5; i++) {
+      const result = await service.checkRateLimit(request);
+      expect(result.allowed).toBe(true);
+    }
+
+    // 6th request should be blocked
+    const result = await service.checkRateLimit(request);
+    expect(result.allowed).toBe(false);
+  });
+});
 ```
+
+## Best Practices
+
+1. **Use Redis in production**: For multi-instance deployments, always use Redis to ensure consistent rate limiting across instances.
+
+2. **Choose appropriate windows**: Shorter windows (1-5 minutes) for strict limits, longer windows (15-60 minutes) for general API protection.
+
+3. **Set realistic limits**: Consider your API's capacity and user needs. Start conservative and adjust based on monitoring.
+
+4. **Use custom key generators**: For authenticated APIs, rate limit by user ID rather than IP to prevent shared IP issues.
+
+5. **Monitor rate limit hits**: Track how often users hit limits to adjust thresholds appropriately.
+
+6. **Implement skip logic**: Exempt health checks, webhooks, or trusted services from rate limiting.
+
+
+## Performance Considerations
+
+- **Memory Store**: Fast but not suitable for cluster mode. Memory usage grows with unique IPs.
+- **Redis Store**: Adds minimal latency (~1-2ms) but enables cluster mode and reduces memory usage.
+- **Lua Scripts**: Redis operations use Lua scripts for atomic operations, ensuring accuracy.
+
+## Troubleshooting
+
+### Rate limiting not working in cluster mode
+
+Make sure Redis is properly configured and accessible from all instances:
+
+```typescript
+RateLimitModule.forRoot({
+  clusterMode: true,
+  redisOptions: {
+    host: 'redis-host',
+    port: 6379,
+    enableReadyCheck: true,
+  },
+})
+```
+
+### Rate limits reset unexpectedly
+
+Check Redis persistence settings. If Redis restarts without persistence, all rate limit data is lost.
 
 ## 🧑‍💻 Contributing
 We love contributions! Found a bug or have an idea? Open an issue or submit a PR.
