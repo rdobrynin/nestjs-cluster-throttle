@@ -21,6 +21,6 @@
     "resolveJsonModule": true,
     "lib": ["ES2021"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*",  "test//*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
