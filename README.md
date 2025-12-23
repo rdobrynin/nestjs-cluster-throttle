@@ -6,15 +6,15 @@ Cluster-ready rate limiting module for NestJS with Redis support and multiple ra
 
 ## Features
 
-- 🚀 **Cluster-ready** - Works seamlessly in clustered environments
-- 🔴 **Redis support** - Distributed rate limiting with Redis
-- 💾 **Memory storage** - In-memory storage for single-instance applications
-- 🎯 **Flexible strategies** - Support for fixed-window, token-bucket, and sliding-window algorithms
-- 🎨 **Decorator-based** - Easy-to-use decorators for route protection
-- 🌍 **Geo-blocking** - IP-based country restrictions with multiple providers (internal, IP-API, custom)
-- ⚙️ **Highly configurable** - Customize limits, windows, and behavior
-- 🔒 **Type-safe** - Written in TypeScript with full type support
-- 🛡️ **Fail-open strategy** - Gracefully handles storage failures
+- **Cluster-ready** - Works seamlessly in clustered environments
+- **Redis support** - Distributed rate limiting with Redis
+- **Memory storage** - In-memory storage for single-instance applications
+- **Flexible strategies** - Support for fixed-window, token-bucket, and sliding-window algorithms
+- **Decorator-based** - Easy-to-use decorators for route protection
+- **Geo-blocking** - IP-based country restrictions with multiple providers (internal, IP-API, custom)
+- **Highly configurable** - Customize limits, windows, and behavior
+- **Type-safe** - Written in TypeScript with full type support
+- **Fail-open strategy** - Gracefully handles storage failures
 
 ## Installation
 

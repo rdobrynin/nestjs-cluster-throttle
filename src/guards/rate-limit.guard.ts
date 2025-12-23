@@ -24,6 +24,7 @@ export class RateLimitGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const response = context.switchToHttp().getResponse();
 
+        // Проверяем, нужно ли пропустить rate limiting
         const skipRateLimit = this.reflector.getAllAndOverride<boolean>(SKIP_RATE_LIMIT_METADATA, [
             context.getHandler(),
             context.getClass(),
@@ -33,11 +34,13 @@ export class RateLimitGuard implements CanActivate {
             return true;
         }
 
+        // Получаем настройки из декоратора
         const options = this.reflector.getAllAndOverride(RATE_LIMIT_METADATA, [
             context.getHandler(),
             context.getClass(),
         ]);
 
+        // Проверка geo-блокировки
         if (this.geoService && options?.geoLocation) {
             const ip = this.getClientIp(request);
 
@@ -49,6 +52,7 @@ export class RateLimitGuard implements CanActivate {
                 );
 
                 if (!geoCheck.allowed) {
+                    // Вызываем callback если есть
                     if (options.geoLocation.onGeoBlock) {
                         options.geoLocation.onGeoBlock(
                             ip,
@@ -67,14 +71,17 @@ export class RateLimitGuard implements CanActivate {
                 if (error instanceof HttpException) {
                     throw error;
                 }
+                // Fail-open: если geo-проверка не удалась, продолжаем
                 console.error('Geo-location check failed:', error);
             }
         }
 
+        // Проверка rate limit
         try {
             const result = await this.rateLimitService.checkRateLimit(request, options);
 
             if (!result.allowed) {
+                // Устанавливаем заголовки
                 response.setHeader('X-RateLimit-Limit', result.limit);
                 response.setHeader('X-RateLimit-Remaining', result.remaining);
                 response.setHeader(
@@ -88,6 +95,7 @@ export class RateLimitGuard implements CanActivate {
                 );
             }
 
+            // Устанавливаем заголовки для успешного запроса
             response.setHeader('X-RateLimit-Limit', result.limit);
             response.setHeader('X-RateLimit-Remaining', result.remaining);
             response.setHeader('X-RateLimit-Reset', Math.ceil(result.resetTime.getTime() / 1000));
@@ -97,6 +105,7 @@ export class RateLimitGuard implements CanActivate {
             if (error instanceof HttpException) {
                 throw error;
             }
+            // В случае ошибки хранилища, разрешаем запрос (fail-open strategy)
             return true;
         }
     }
