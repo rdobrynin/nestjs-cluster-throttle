@@ -52,5 +52,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript type definitions
 - JSDoc comments for all public APIs
 
-[Unreleased]: https://github.com/your-username/nestjs-cluster-throttle/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/your-username/nestjs-cluster-throttle/releases/tag/v1.0.0
+[Unreleased]: https://github.com/rdobrynin/nestjs-cluster-throttle/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/rdobrynin/nestjs-cluster-throttle/releases/tag/v1.0.0

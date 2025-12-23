@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Module } from '@nestjs/common';
 import { RateLimitModule } from './rate-limit.module';
 import { RateLimitService } from './rate-limit.service';
-import {RateLimitGuard} from "./guards/rate-limit.guard";
+import { RateLimitGuard } from './guards/rate-limit.guard';
 
 describe('RateLimitModule', () => {
     describe('forRoot', () => {
