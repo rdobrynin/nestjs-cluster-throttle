@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RateLimitGuard } from './rate-limit.guard';
 import { RateLimitService } from '../rate-limit.service';
+import { GeoService } from '../geo/geo.service';
 import {
     createMockRequest,
     createMockResponse,
@@ -15,12 +16,17 @@ describe('RateLimitGuard', () => {
     let guard: RateLimitGuard;
     let reflector: Reflector;
     let rateLimitService: jest.Mocked<RateLimitService>;
+    let geoService: jest.Mocked<GeoService>;
 
     const mockRequest = createMockRequest();
     const mockResponse = createMockResponse();
 
     const mockRateLimitService = {
         checkRateLimit: jest.fn(),
+    } as any;
+
+    const mockGeoService = {
+        isCountryAllowed: jest.fn(),
     } as any;
 
     beforeEach(async () => {
@@ -37,14 +43,19 @@ describe('RateLimitGuard', () => {
                     provide: RateLimitService,
                     useValue: mockRateLimitService,
                 },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
             ],
         }).compile();
 
         guard = module.get<RateLimitGuard>(RateLimitGuard);
         reflector = module.get<Reflector>(Reflector);
         rateLimitService = module.get(RateLimitService);
-
+        geoService = module.get(GeoService);
         mockResponse.setHeader.mockClear();
+        mockGeoService.isCountryAllowed.mockClear();
     });
 
     afterEach(() => {
@@ -57,11 +68,11 @@ describe('RateLimitGuard', () => {
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
 
             rateLimitService.checkRateLimit.mockResolvedValue(
-                createMockRateLimitResult({
-                    allowed: true,
-                    limit: 100,
-                    remaining: 95,
-                }),
+              createMockRateLimitResult({
+                  allowed: true,
+                  limit: 100,
+                  remaining: 95,
+              }),
             );
 
             const result = await guard.canActivate(context);
@@ -76,8 +87,8 @@ describe('RateLimitGuard', () => {
         it('should skip rate limiting when SkipRateLimit decorator is used', async () => {
             const context = createMockExecutionContext();
             jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(true) // SKIP_RATE_LIMIT_METADATA
-                .mockReturnValueOnce(undefined); // RATE_LIMIT_METADATA
+              .mockReturnValueOnce(true) // SKIP_RATE_LIMIT_METADATA
+              .mockReturnValueOnce(undefined); // RATE_LIMIT_METADATA
 
             const result = await guard.canActivate(context);
 
@@ -95,8 +106,8 @@ describe('RateLimitGuard', () => {
             };
 
             jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(undefined) // SKIP_RATE_LIMIT_METADATA
-                .mockReturnValueOnce(customOptions); // RATE_LIMIT_METADATA
+              .mockReturnValueOnce(undefined) // SKIP_RATE_LIMIT_METADATA
+              .mockReturnValueOnce(customOptions); // RATE_LIMIT_METADATA
 
             rateLimitService.checkRateLimit.mockResolvedValue({
                 allowed: true,
@@ -109,8 +120,8 @@ describe('RateLimitGuard', () => {
             await guard.canActivate(context);
 
             expect(rateLimitService.checkRateLimit).toHaveBeenCalledWith(
-                mockRequest,
-                customOptions,
+              mockRequest,
+              customOptions,
             );
         });
 
@@ -123,8 +134,8 @@ describe('RateLimitGuard', () => {
             };
 
             jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(undefined)
-                .mockReturnValueOnce(customOptions);
+              .mockReturnValueOnce(undefined)
+              .mockReturnValueOnce(customOptions);
 
             rateLimitService.checkRateLimit.mockResolvedValue({
                 allowed: false,
@@ -152,8 +163,8 @@ describe('RateLimitGuard', () => {
             };
 
             jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(undefined)
-                .mockReturnValueOnce(customOptions);
+              .mockReturnValueOnce(undefined)
+              .mockReturnValueOnce(customOptions);
 
             rateLimitService.checkRateLimit.mockResolvedValue({
                 allowed: false,
@@ -175,8 +186,8 @@ describe('RateLimitGuard', () => {
         it('should use default status code 429 when not provided', async () => {
             const context = createMockExecutionContext();
             jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(undefined)
-                .mockReturnValueOnce(undefined);
+              .mockReturnValueOnce(undefined)
+              .mockReturnValueOnce(undefined);
 
             rateLimitService.checkRateLimit.mockResolvedValue({
                 allowed: false,
@@ -195,6 +206,29 @@ describe('RateLimitGuard', () => {
             }
         });
 
+        it('should set correct X-RateLimit-Reset header', async () => {
+            const context = createMockExecutionContext(mockRequest, mockResponse);
+            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
+
+            const resetTime = new Date(Date.now() + 60000);
+            rateLimitService.checkRateLimit.mockResolvedValue(
+              createMockRateLimitResult({
+                  allowed: true,
+                  limit: 100,
+                  remaining: 95,
+                  resetTime,
+              }),
+            );
+
+            await guard.canActivate(context);
+
+            const expectedResetTimestamp = Math.ceil(resetTime.getTime() / 1000);
+            expect(mockResponse.setHeader).toHaveBeenCalledWith(
+              'X-RateLimit-Reset',
+              expectedResetTimestamp,
+            );
+        });
+
         it('should handle storage errors with fail-open strategy', async () => {
             const context = createMockExecutionContext();
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
@@ -209,8 +243,8 @@ describe('RateLimitGuard', () => {
         it('should rethrow HttpException errors', async () => {
             const context = createMockExecutionContext();
             jest.spyOn(reflector, 'getAllAndOverride')
-                .mockReturnValueOnce(undefined)
-                .mockReturnValueOnce(undefined);
+              .mockReturnValueOnce(undefined)
+              .mockReturnValueOnce(undefined);
 
             rateLimitService.checkRateLimit.mockResolvedValue({
                 allowed: false,
@@ -222,5 +256,64 @@ describe('RateLimitGuard', () => {
 
             await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
         });
+
+        it('should handle metadata from both handler and class', async () => {
+            const context = createMockExecutionContext(mockRequest, mockResponse);
+            const handlerOptions = { max: 50 };
+
+            jest.spyOn(reflector, 'getAllAndOverride')
+              .mockReturnValueOnce(undefined)
+              .mockReturnValueOnce(handlerOptions);
+
+            rateLimitService.checkRateLimit.mockResolvedValue(
+              createMockRateLimitResult({
+                  allowed: true,
+                  limit: 50,
+                  remaining: 45,
+              }),
+            );
+
+            await guard.canActivate(context);
+
+            expect(reflector.getAllAndOverride).toHaveBeenCalledTimes(2);
+            expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+              'SKIP_RATE_LIMIT_METADATA',
+              expect.any(Array),
+            );
+            expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+              'RATE_LIMIT_METADATA',
+              expect.any(Array),
+            );
+        });
     });
-});
+
+    describe('error scenarios', () => {
+        it('should handle storage errors with fail-open strategy', async () => {
+            const context = createMockExecutionContext(mockRequest, mockResponse);
+            jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
+
+            rateLimitService.checkRateLimit.mockRejectedValue(new Error('Storage error'));
+
+            const result = await guard.canActivate(context);
+
+            expect(result).toBe(true);
+        });
+
+        it('should rethrow HttpException errors', async () => {
+            const context = createMockExecutionContext(mockRequest, mockResponse);
+            jest.spyOn(reflector, 'getAllAndOverride')
+              .mockReturnValueOnce(undefined)
+              .mockReturnValueOnce(undefined);
+
+            rateLimitService.checkRateLimit.mockResolvedValue(
+              createMockRateLimitResult({
+                  allowed: false,
+                  limit: 100,
+                  remaining: 0,
+              }),
+            );
+
+            await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
+        });
+    });
+})
