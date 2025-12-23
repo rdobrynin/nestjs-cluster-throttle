@@ -1,6 +1,6 @@
 # nestjs-cluster-throttle
 
-[![npm version](https://badge.fury.io/js/nestjs-cluster-throttle.svg)](https://badge.fury.io/js/nestjs-cluster-throttle) [![npm downloads](https://img.shields.io/npm/dm/nestjs-cluster-throttle.svg)](https://www.npmjs.com/package/nestjs-cluster-throttle) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://claude.ai/chat/coverage) [![CI](https://github.com/your-username/nestjs-cluster-throttle/workflows/CI/badge.svg)](https://github.com/your-username/nestjs-cluster-throttle/actions)
+[![npm version](https://badge.fury.io/js/nestjs-cluster-throttle.svg)](https://badge.fury.io/js/nestjs-cluster-throttle) [![npm downloads](https://img.shields.io/npm/dm/nestjs-cluster-throttle.svg)](https://www.npmjs.com/package/nestjs-cluster-throttle) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://claude.ai/chat/coverage) [![CI](https://github.com/rdobrynin/nestjs-cluster-throttle/workflows/CI/badge.svg)](https://github.com/your-username/nestjs-cluster-throttle/actions)
 
 Cluster-ready rate limiting module for NestJS with Redis support and multiple rate limiting strategies.
 
