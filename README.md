@@ -24,6 +24,12 @@ npm install nestjs-cluster-throttle ioredis
 yarn add nestjs-cluster-throttle ioredis
 ```
 
+## Requirements
+
+- Node.js >= 14.0.0
+- NestJS >= 9.0.0 (supports v9, v10, v11)
+- TypeScript >= 5.0.0
+
 ## Quick Start
 
 ### Basic Usage (In-Memory)
