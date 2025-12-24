@@ -5,3 +5,4 @@ export * from './guards/rate-limit.guard';
 export * from './decorators/rate-limit.decorator';
 export * from './decorators/skip-rate-limit.decorator';
 export * from './interfaces/rate-limit-options.interface';
+export * from './interfaces/geo-location.interface';
