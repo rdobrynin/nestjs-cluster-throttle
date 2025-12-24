@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔄 Async configuration support with `forRootAsync`
 - 🧪 Comprehensive test coverage
 - 📖 Complete documentation and examples
+- ✅ NestJS 9, 10, and 11 support
+- ✅ TypeScript 5.3+ support
+- ✅ reflect-metadata 0.1.x and 0.2.x support
 
 ### Features
 - **Global Guards**: Automatic rate limiting for all routes

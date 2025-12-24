@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x, 18.x, 20.x]
+        nestjs-version: [9, 10, 11]
 
     services:
       redis:
