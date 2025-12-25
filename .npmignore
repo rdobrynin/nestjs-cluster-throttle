@@ -3,6 +3,7 @@ src/
 test/
 *.spec.ts
 *.test.ts
+.releaserc.json
 
 # Configuration files
 tsconfig.json

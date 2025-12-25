@@ -1,0 +1,16 @@
+name-template: 'v$RESOLVED_VERSION 🌈'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 New Features'
+    labels: ['feature', 'enhancement']
+  - title: '🐛 Bug Fixes'
+    labels: ['bug', 'fix']
+  - title: '🧰 Maintenance'
+    labels: ['chore', 'refactor']
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+template: |
+  ## Whats new
+  
+  $CHANGES
+  
+  **All list of changes:** $PREVIOUS_TAG...$LATEST_TAG
