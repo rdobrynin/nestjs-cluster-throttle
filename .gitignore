@@ -1,4 +1,7 @@
 .idea
 coverage/
-dist
+dist/
+node_modules/
+*.log
+.env
 tsconfig.build.tsbuildinfo
