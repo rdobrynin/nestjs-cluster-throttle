@@ -1,3 +1,5 @@
+import { GeoLocationOptions } from './geo-location.interface';
+
 export interface RateLimitOptions {
     windowMs: number;
     max: number;
@@ -19,4 +21,5 @@ export interface RateLimitOptions {
     strategy?: 'fixed-window' | 'token-bucket' | 'sliding-window';
     burstCapacity?: number;
     fillRate?: number;
+    geoLocation?: GeoLocationOptions;
 }
